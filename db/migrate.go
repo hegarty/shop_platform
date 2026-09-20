@@ -113,11 +113,11 @@ func Migrate(ctx context.Context, pool *pgxpool.Pool, migrations []Migration) er
 		}
 
 		if _, err := tx.Exec(ctx, m.Up); err != nil {
-			tx.Rollback(ctx)
+			_ = tx.Rollback(ctx)
 			return fmt.Errorf("db: apply migration %04d (%s): %w", m.Version, m.Name, err)
 		}
 		if _, err := tx.Exec(ctx, `INSERT INTO schema_migrations (version, name) VALUES ($1, $2)`, m.Version, m.Name); err != nil {
-			tx.Rollback(ctx)
+			_ = tx.Rollback(ctx)
 			return fmt.Errorf("db: record migration %04d: %w", m.Version, err)
 		}
 		if err := tx.Commit(ctx); err != nil {
@@ -161,11 +161,11 @@ func Rollback(ctx context.Context, pool *pgxpool.Pool, migrations []Migration, s
 			return fmt.Errorf("db: begin tx for rollback %04d: %w", v, err)
 		}
 		if _, err := tx.Exec(ctx, m.Down); err != nil {
-			tx.Rollback(ctx)
+			_ = tx.Rollback(ctx)
 			return fmt.Errorf("db: rollback migration %04d (%s): %w", v, m.Name, err)
 		}
 		if _, err := tx.Exec(ctx, `DELETE FROM schema_migrations WHERE version = $1`, v); err != nil {
-			tx.Rollback(ctx)
+			_ = tx.Rollback(ctx)
 			return fmt.Errorf("db: unrecord migration %04d: %w", v, err)
 		}
 		if err := tx.Commit(ctx); err != nil {
